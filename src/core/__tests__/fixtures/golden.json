@@ -1,0 +1,232 @@
+{
+ "bia": [
+  {
+   "profile": {
+    "heightCm": 175,
+    "age": 30,
+    "sex": "male"
+   },
+   "weightKg": 67.05,
+   "impedance": 600,
+   "expected": {
+    "weight_kg": 67.05,
+    "impedance": 600,
+    "bmi": 21.9,
+    "bfr": 17.7,
+    "vfr": 7.0,
+    "tfr": 55.89245339299032,
+    "muscle_pct": 77.4,
+    "muscle_kg": 51.88,
+    "bone_mass": 3.3,
+    "bmr": 1544.0,
+    "body_age": 28.0,
+    "ideal_weight": 66.5,
+    "protein_kg": 14.41,
+    "protein_pct": 21.5,
+    "fat_mass_kg": 11.87
+   }
+  },
+  {
+   "profile": {
+    "heightCm": 165,
+    "age": 31,
+    "sex": "male"
+   },
+   "weightKg": 82.4,
+   "impedance": 480.5,
+   "expected": {
+    "weight_kg": 82.4,
+    "impedance": 480.5,
+    "bmi": 30.3,
+    "bfr": 28.8,
+    "vfr": 15.0,
+    "tfr": 52.34193871359223,
+    "muscle_pct": 68.5,
+    "muscle_kg": 56.43,
+    "bone_mass": 2.25,
+    "bmr": 1708.0,
+    "body_age": 41.0,
+    "ideal_weight": 59.5,
+    "protein_kg": 13.3,
+    "protein_pct": 16.1,
+    "fat_mass_kg": 23.73
+   }
+  },
+  {
+   "profile": {
+    "heightCm": 160,
+    "age": 45,
+    "sex": "female"
+   },
+   "weightKg": 58.2,
+   "impedance": 650,
+   "expected": {
+    "weight_kg": 58.2,
+    "impedance": 650,
+    "bmi": 22.7,
+    "bfr": 32.1,
+    "vfr": 5.5,
+    "tfr": 48.98429553264605,
+    "muscle_pct": 62.3,
+    "muscle_kg": 36.27,
+    "bone_mass": 3.26,
+    "bmr": 1142.0,
+    "body_age": 44.0,
+    "ideal_weight": 54.0,
+    "protein_kg": 7.76,
+    "protein_pct": 13.3,
+    "fat_mass_kg": 18.67
+   }
+  },
+  {
+   "profile": {
+    "heightCm": 182,
+    "age": 22,
+    "sex": "male"
+   },
+   "weightKg": 95.0,
+   "impedance": 420,
+   "expected": {
+    "weight_kg": 95.0,
+    "impedance": 420,
+    "bmi": 28.7,
+    "bfr": 26.6,
+    "vfr": 13.5,
+    "tfr": 52.53568421052633,
+    "muscle_pct": 70.9,
+    "muscle_kg": 67.32,
+    "bone_mass": 2.43,
+    "bmr": 2062.0,
+    "body_age": 32.0,
+    "ideal_weight": 71.4,
+    "protein_kg": 17.41,
+    "protein_pct": 18.3,
+    "fat_mass_kg": 25.25
+   }
+  },
+  {
+   "profile": {
+    "heightCm": 155,
+    "age": 60,
+    "sex": "female"
+   },
+   "weightKg": 72.3,
+   "impedance": 710,
+   "expected": {
+    "weight_kg": 72.3,
+    "impedance": 710,
+    "bmi": 30.1,
+    "bfr": 43.8,
+    "vfr": 11.5,
+    "tfr": 44.38795297372061,
+    "muscle_pct": 50.2,
+    "muscle_kg": 36.3,
+    "bone_mass": 4.0,
+    "bmr": 1174.0,
+    "body_age": 70.0,
+    "ideal_weight": 51.0,
+    "protein_kg": 4.21,
+    "protein_pct": 5.8,
+    "fat_mass_kg": 31.65
+   }
+  },
+  {
+   "profile": {
+    "heightCm": 170,
+    "age": 16,
+    "sex": "female"
+   },
+   "weightKg": 50,
+   "impedance": 700,
+   "expected": {
+    "weight_kg": 50,
+    "impedance": 700,
+    "bmi": 17.3,
+    "bfr": 17.9,
+    "vfr": null,
+    "tfr": null,
+    "muscle_pct": 75.6,
+    "muscle_kg": 37.81,
+    "bone_mass": 3.22,
+    "bmr": 1220.0,
+    "body_age": 18.0,
+    "ideal_weight": 60.0,
+    "protein_kg": 11.53,
+    "protein_pct": 23.1,
+    "fat_mass_kg": 8.97
+   }
+  },
+  {
+   "profile": {
+    "heightCm": 190,
+    "age": 70,
+    "sex": "male"
+   },
+   "weightKg": 120,
+   "impedance": 350,
+   "expected": {
+    "weight_kg": 120,
+    "impedance": 350,
+    "bmi": 33.2,
+    "bfr": 32.0,
+    "vfr": 28.0,
+    "tfr": 50.321875000000006,
+    "muscle_pct": 65.2,
+    "muscle_kg": 78.26,
+    "bone_mass": 3.33,
+    "bmr": 2267.0,
+    "body_age": 70.0,
+    "ideal_weight": 77.0,
+    "protein_kg": 17.87,
+    "protein_pct": 14.9,
+    "fat_mass_kg": 38.42
+   }
+  }
+ ],
+ "parse": {
+  "c0_readme": {
+   "md": {
+    "1984": "1a3117700a01252416514b123c"
+   },
+   "expected": {
+    "variant": "C0",
+    "weightKg": 67.05,
+    "impedance": 600.0,
+    "rawHex": "1A3117700A01252416514B123C"
+   }
+  },
+  "v20": {
+   "md": {
+    "8394": "00000000000005001fbb140396000000000000"
+   },
+   "expected": {
+    "variant": "V20",
+    "weightKg": 81.23,
+    "impedance": 512.3,
+    "rawHex": "00000000000005001FBB140396000000000000"
+   }
+  },
+  "v11_lb": {
+   "md": {
+    "4554": "00000006760000000010000000000000bb000000000000"
+   },
+   "expected": {
+    "variant": "V11",
+    "weightKg": 75.02416512936678,
+    "impedance": null,
+    "rawHex": "00000006760000000010000000000000BB000000000000"
+   }
+  },
+  "vf0": {
+   "md": {
+    "61695": "0000b602"
+   },
+   "expected": {
+    "variant": "VF0",
+    "weightKg": 69.4,
+    "impedance": null,
+    "rawHex": "0000B602"
+   }
+  }
+ }
+}
