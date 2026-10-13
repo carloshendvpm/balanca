@@ -128,7 +128,9 @@ export default function Weigh() {
           </T>
         </T>
         <T variant="caption" tone="textMuted">
-          {live ? `${live.variant} · ${live.impedance ? `${live.impedance.toFixed(1)} Ω` : 'medindo impedância…'}` : 'Fique descalço para medir a composição corporal'}
+          {live
+            ? `${live.variant} · ${live.impedance ? `${live.impedance.toFixed(1)} Ω` : live.stable ? 'só peso (sem bioimpedância)' : 'medindo…'}`
+            : 'Fique descalço para medir a composição corporal'}
         </T>
       </Card>
 

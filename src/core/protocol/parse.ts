@@ -83,6 +83,10 @@ export function parseVF0(data: Uint8Array): Parsed | null {
   return { weightKg: u16be(data[3], data[2]) / 10, impedance: null, stable: true };
 }
 
+// C0 scales broadcast 0x1770 (600.0 Ω) in the impedance slot whenever there is
+// no measurement, even with nobody on the scale; it is not a real reading.
+export const C0_NO_IMPEDANCE = 0x1770;
+
 /** C0: any company ID whose low byte is 0xC0 (high byte = sequence number). */
 export function parseC0(data: Uint8Array): Parsed | null {
   if (data.length < 7) return null;
@@ -90,7 +94,8 @@ export function parseC0(data: Uint8Array): Parsed | null {
   const kg = toKgFromUnit(u16be(data[0], data[1]), (attrib >> 3) & 0x3, resolveDivider((attrib >> 1) & 0x3));
   if (kg === null) return null;
   const impRaw = u16be(data[2], data[3]);
-  return { weightKg: kg, impedance: impRaw > 0 ? impRaw / 10 : null, stable: (attrib & 0x01) === 1 };
+  const impedance = impRaw > 0 && impRaw !== C0_NO_IMPEDANCE ? impRaw / 10 : null;
+  return { weightKg: kg, impedance, stable: (attrib & 0x01) === 1 };
 }
 
 export const findC0Key = (md: ManufacturerData) => [...md.keys()].find((k) => (k & 0xff) === 0xc0);
