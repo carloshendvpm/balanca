@@ -39,3 +39,22 @@ describe('ageOn', () => {
     expect(ageOn('1995-10-13', new Date('2026-10-13'))).toBe(31);
   });
 });
+
+import { bandFor, formatMetric, metricsFor } from '../metrics';
+
+describe('metricsFor', () => {
+  const p = { sex: 'male' as const, birthDate: '1996-01-01', heightCm: 175 };
+  it('computes only weight and BMI without impedance', () => {
+    const m = metricsFor({ measuredAt: Date.UTC(2026, 5, 1), weightKg: 67.05, impedance: null }, p);
+    expect(Object.keys(m).sort()).toEqual(['bmi', 'weightKg']);
+  });
+  it('uses the age at measurement time', () => {
+    const m = metricsFor({ measuredAt: Date.UTC(2026, 5, 1), weightKg: 67.05, impedance: 600 }, p);
+    expect(m.bodyFatPct).toBeCloseTo(calcBia({ heightCm: 175, sex: 'male', age: 30 }, 67.05, 600).bodyFatPct);
+  });
+  it('formats and classifies', () => {
+    expect(formatMetric('weightKg', 82.4)).toBe('82,40 kg');
+    expect(bandFor('bmi', 26.9, 'male')?.label).toBe('Sobrepeso');
+    expect(bandFor('bodyFatPct', 22, 'female')?.tone).toBe('ok');
+  });
+});

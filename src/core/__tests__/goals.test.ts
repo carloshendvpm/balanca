@@ -85,6 +85,10 @@ describe('matchProfile', () => {
       profileIds: [3, 2],
     });
   });
+  it('gives an unmatched weight to the only profile without history', () => {
+    expect(matchProfile(75, [...people, { profileId: 9, lastWeightKg: null }])).toEqual({ kind: 'match', profileId: 9 });
+    expect(matchProfile(61, [{ profileId: 8, lastWeightKg: null }, { profileId: 9, lastWeightKg: null }])).toEqual({ kind: 'none' });
+  });
   it('assigns to the only profile when it has no history', () => {
     expect(matchProfile(80, [{ profileId: 7, lastWeightKg: null }])).toEqual({ kind: 'match', profileId: 7 });
   });

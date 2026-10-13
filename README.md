@@ -1,56 +1,45 @@
-# Welcome to your Expo app 👋
+# Balança
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+App de iPhone para balanças de bioimpedância **OKOK** (Chipsea), feito para substituir o app oficial:
 
-## Get started
+- **Offline e privado.** Não tem conta nem nuvem; os dados ficam em SQLite no aparelho. Exporta CSV e faz backup em JSON.
+- **Histórico e gráficos.** Gráfico de cada métrica com média móvel de 7 dias, períodos de 1M a Tudo, comparação entre duas pesagens e variação em 7 e 30 dias.
+- **Multiusuário.** Cada pesagem vai sozinha para o perfil com peso mais próximo; se houver dúvida, o app pergunta.
+- **Várias metas simultâneas.** Ex.: 80 kg até dezembro e 75 kg até junho. Cada meta mostra o progresso, o ritmo necessário, o ritmo atual (regressão dos últimos 28 dias) e a data prevista de chegada.
 
-1. Install dependencies
+O protocolo BLE e as fórmulas vêm da engenharia reversa em
+[100nandoo/okok-bia-formulas](https://github.com/100nandoo/okok-bia-formulas). Os testes verificam os resultados contra o `okok_ble_reader.py` original.
 
-   ```bash
-   npm install
-   ```
+## Estrutura
 
-2. Start the app
+| Pasta | Conteúdo |
+| --- | --- |
+| `src/core/` | Lógica pura em TypeScript, toda testada: parsers V20/V11/VF0/C0, fórmulas BIA, metas, matching de perfis, detecção de pesagem estável e CSV |
+| `modules/okok-scanner/` | Módulo nativo em Swift (CoreBluetooth) que escuta os anúncios BLE da balança. A balança não aceita conexão, só transmite |
+| `src/ble/` | Liga o scanner ao parser; no web usa um simulador que gera anúncios C0 reais |
+| `src/db/` | Schema SQLite, migrações e consultas |
+| `src/app/` | Telas (expo-router): Início, Pesar, Histórico, Metas e Ajustes |
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Desenvolvimento (Windows/WSL, sem Mac)
 
 ```bash
-npm run reset-project
+npm install
+npm test            # vitest
+npm run typecheck
+npm run web         # app no navegador, com balança simulada
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Instalar no iPhone sem Mac e sem conta paga
 
-### Other setup steps
+1. Suba o repositório no GitHub. Em repositório **público**, os minutos de macOS são ilimitados.
+2. A cada push na `main`, o workflow **iOS (.ipa sem assinatura)** compila o app. Baixe o artefato `Balanca-ipa` em *Actions*.
+3. No Windows, instale o [Sideloadly](https://sideloadly.io) (precisa do iTunes e do iCloud baixados do site da Apple, não da Microsoft Store).
+4. Conecte o iPhone por cabo, arraste o `Balanca.ipa` para o Sideloadly e entre com seu Apple ID gratuito.
+5. No iPhone, ative *Ajustes › Privacidade e Segurança › Modo Desenvolvedor* e confie no seu Apple ID em *Ajustes › Geral › VPN e Gerenciamento de Dispositivos*.
+6. Com Apple ID gratuito, o app expira em **7 dias**. Reinstale pelo Sideloadly (os dados são mantidos) ou use o [SideStore](https://sidestore.io), que renova no próprio iPhone.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## Primeira pesagem / diagnóstico
 
-## Learn more
+Se a balança não aparecer, abra *Ajustes › Diagnóstico Bluetooth* e suba na balança. Ela aparece no topo da lista, com o sinal mais forte, e mostra o *manufacturer data* em hex. Se a linha não ficar verde ("OKOK …"), anote o hex: é dele que o parser precisa.
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+> As métricas de composição corporal são estimativas e não substituem avaliação profissional.
