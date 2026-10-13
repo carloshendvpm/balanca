@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { StableDetector } from '../capture';
@@ -6,6 +5,7 @@ import { StableDetector } from '../capture';
 import { base64ToBytes, hexToBytes, splitManufacturerData } from '../protocol/ios-adv';
 import { parseOkok, type ManufacturerData } from '../protocol/parse';
 import golden from './fixtures/golden.json';
+import capture from './fixtures/real-c0-capture.json';
 
 const toMd = (md: Record<string, string>): ManufacturerData =>
   new Map(Object.entries(md).map(([k, hex]) => [Number(k), hexToBytes(hex)]));
@@ -38,14 +38,12 @@ describe('parseOkok matches okok_ble_reader.py', () => {
 });
 
 describe('real capture (C0 scale 08:B8:D0:16:7C:35, 4 weighings of ~94 kg)', () => {
-  const lines = readFileSync(new URL('./fixtures/real-c0-capture.txt', import.meta.url), 'utf8').trim().split('\n');
 
   it('records exactly one weighing per step-on', () => {
     const d = new StableDetector();
-    const events = lines.flatMap((line) => {
-      const [t, hex] = line.split(' ');
-      const r = parseOkok(splitManufacturerData(hexToBytes(hex)));
-      const ev = r && d.push(r, Number(t) * 1000);
+    const events = capture.ads.flatMap(([t, hex]) => {
+      const r = parseOkok(splitManufacturerData(hexToBytes(hex as string)));
+      const ev = r && d.push(r, (t as number) * 1000);
       return ev ? [ev] : [];
     });
     expect(events.map((e) => [e.kind, e.reading.weightKg])).toEqual([
@@ -57,8 +55,8 @@ describe('real capture (C0 scale 08:B8:D0:16:7C:35, 4 weighings of ~94 kg)', () 
   });
 
   it('never reports the 0x1770 placeholder as impedance', () => {
-    for (const line of lines) {
-      const r = parseOkok(splitManufacturerData(hexToBytes(line.split(' ')[1])));
+    for (const [, hex] of capture.ads) {
+      const r = parseOkok(splitManufacturerData(hexToBytes(hex as string)));
       expect(r?.impedance ?? null).toBeNull();
     }
   });
