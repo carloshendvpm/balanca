@@ -1,8 +1,12 @@
 // Minimal RFC 4180 CSV helpers + importers for the formats we accept.
 
+// Text starting with these is run as a formula by spreadsheet apps.
+const FORMULA_START = /^[=+\-@\t\r]/;
+
 export function toCsv(rows: (string | number | null | undefined)[][]): string {
   const cell = (v: string | number | null | undefined) => {
-    const s = v === null || v === undefined ? '' : String(v);
+    let s = v === null || v === undefined ? '' : String(v);
+    if (typeof v === 'string' && FORMULA_START.test(s)) s = `'${s}`;
     return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return rows.map((r) => r.map(cell).join(',')).join('\n') + '\n';
@@ -39,6 +43,9 @@ export interface ImportedReading {
   profileName: string | null;
 }
 
+const unescapeFormula = (s: string | undefined) =>
+  s && s.startsWith("'") && FORMULA_START.test(s.slice(1)) ? s.slice(1) : s;
+
 const num = (s: string | undefined) => {
   if (s === undefined || s.trim() === '') return null;
   const n = Number(s.replace(',', '.'));
@@ -72,7 +79,7 @@ export function importReadingsCsv(text: string): ImportedReading[] {
       impedance: iImp >= 0 ? num(r[iImp]) : null,
       variant: (iVariant >= 0 && r[iVariant]) || 'manual',
       rawHex: (iRaw >= 0 && r[iRaw]) || '',
-      profileName: (iProfile >= 0 && r[iProfile]) || null,
+      profileName: (iProfile >= 0 && unescapeFormula(r[iProfile])) || null,
     });
   }
   return out;

@@ -8,6 +8,12 @@ describe('csv', () => {
     expect(parseCsv(toCsv(rows))).toEqual(rows);
   });
 
+  it('neutralises spreadsheet formulas in text but not negative numbers', () => {
+    expect(toCsv([['=HYPERLINK("x")', '@SUM(A1)', -0.5]])).toBe(`"'=HYPERLINK(""x"")",'@SUM(A1),-0.5\n`);
+    const text = toCsv([['data', 'perfil', 'peso_kg'], ['2026-03-01T07:12:00Z', '=Carlos', 80]]);
+    expect(importReadingsCsv(text)[0].profileName).toBe('=Carlos');
+  });
+
   it('imports okok_ble_reader.py CSV', () => {
     const text =
       'timestamp,device,variant,weight_kg,impedance_ohm,raw_payload,bmi\n' +
