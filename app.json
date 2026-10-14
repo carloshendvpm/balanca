@@ -40,15 +40,7 @@
         }
       ],
       "expo-sqlite",
-      "expo-sharing",
-      [
-        "expo-build-properties",
-        {
-          "ios": {
-            "ccacheEnabled": true
-          }
-        }
-      ]
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true,

@@ -28,12 +28,6 @@ jobs:
     needs: test
     if: github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
-    env:
-      CCACHE_DIR: ${{ github.workspace }}/.ccache
-      CCACHE_SLOPPINESS: clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros
-      CCACHE_FILECLONE: 'true'
-      CCACHE_DEPEND: 'true'
-      CCACHE_INODECACHE: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
@@ -44,16 +38,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Instalar ccache
-        run: brew install ccache
-      - name: Cache de compilação (ccache)
-        uses: actions/cache@v4
-        with:
-          path: .ccache
-          key: ccache-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
-          restore-keys: |
-            ccache-${{ hashFiles('package-lock.json') }}-
-            ccache-
       - name: Cache dos Pods
         uses: actions/cache@v4
         with:
@@ -74,7 +58,6 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build | tail -n 200
-          ccache -s
       - name: Empacotar .ipa
         run: |
           mkdir -p Payload
