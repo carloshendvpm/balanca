@@ -1,9 +1,15 @@
 name: iOS (.ipa sem assinatura)
 
+# Every push runs only the tests (~30 s). The iPhone build (~20 min) runs
+# when started by hand: Actions › "iOS (.ipa sem assinatura)" › Run workflow.
 on:
   push:
     branches: [main]
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -20,7 +26,14 @@ jobs:
 
   ipa:
     needs: test
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-latest
+    env:
+      CCACHE_DIR: ${{ github.workspace }}/.ccache
+      CCACHE_SLOPPINESS: clang_index_store,file_stat_matches,include_file_ctime,include_file_mtime,ivfsoverlay,pch_defines,modules,system_headers,time_macros
+      CCACHE_FILECLONE: 'true'
+      CCACHE_DEPEND: 'true'
+      CCACHE_INODECACHE: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: maxim-lobanov/setup-xcode@v1
@@ -31,6 +44,22 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Instalar ccache
+        run: brew install ccache
+      - name: Cache de compilação (ccache)
+        uses: actions/cache@v4
+        with:
+          path: .ccache
+          key: ccache-${{ hashFiles('package-lock.json') }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ hashFiles('package-lock.json') }}-
+            ccache-
+      - name: Cache dos Pods
+        uses: actions/cache@v4
+        with:
+          path: ~/Library/Caches/CocoaPods
+          key: pods-${{ hashFiles('package-lock.json') }}
+          restore-keys: pods-
       - name: Gerar projeto iOS
         run: npx expo prebuild --platform ios --clean
       - name: Compilar (Release, sem assinatura)
@@ -45,6 +74,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build | tail -n 200
+          ccache -s
       - name: Empacotar .ipa
         run: |
           mkdir -p Payload
