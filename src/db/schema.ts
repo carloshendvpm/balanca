@@ -32,6 +32,15 @@ export interface GoalRow {
   completedAt: number | null;
 }
 
+export interface Measurement {
+  id: number;
+  profileId: number;
+  measuredAt: number;
+  neckCm: number;
+  waistCm: number;
+  hipCm: number | null;
+}
+
 const MIGRATIONS = [
   `CREATE TABLE profiles (
      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -60,6 +69,16 @@ const MIGRATIONS = [
      startKg REAL NOT NULL,
      completedAt INTEGER
    );`,
+  `CREATE TABLE measurements (
+     id INTEGER PRIMARY KEY AUTOINCREMENT,
+     profileId INTEGER NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+     measuredAt INTEGER NOT NULL,
+     neckCm REAL NOT NULL,
+     waistCm REAL NOT NULL,
+     hipCm REAL
+   );
+   CREATE INDEX measurements_profile_time ON measurements(profileId, measuredAt);
+   CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);`,
 ];
 
 export async function migrate(db: SQLiteDatabase) {

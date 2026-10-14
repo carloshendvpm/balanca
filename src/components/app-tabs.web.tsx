@@ -1,7 +1,7 @@
 import { TabList, TabSlot, TabTrigger, Tabs, type TabListProps, type TabTriggerSlotProps } from 'expo-router/ui';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { MaxContentWidth } from '@/constants/theme';
+import { Display, MaxContentWidth } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { TABS } from './tabs';
@@ -36,8 +36,8 @@ function Bar({ children, ...props }: TabListProps) {
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   const c = useTheme();
   return (
-    <Pressable {...props} style={[styles.button, isFocused && { backgroundColor: c.text }]}>
-      <Text style={{ color: isFocused ? c.background : c.textSecondary, fontWeight: '600', fontSize: 14 }}>{children}</Text>
+    <Pressable {...props} style={[styles.button, isFocused && { backgroundColor: c.accent }]}>
+      <Text style={{ color: isFocused ? c.accentText : c.textSecondary, fontFamily: Display.semibold, fontSize: 17 }}>{children}</Text>
     </Pressable>
   );
 }

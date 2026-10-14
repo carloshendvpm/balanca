@@ -13,22 +13,22 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Fonts, MaxContentWidth, Spacing, type Palette } from '@/constants/theme';
+import { Display, Fonts, MaxContentWidth, Spacing, type Palette } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-type Tone = keyof Pick<Palette, 'text' | 'textSecondary' | 'textMuted' | 'accent' | 'good' | 'bad' | 'warn' | 'low'>;
+type Tone = keyof Pick<Palette, 'text' | 'textSecondary' | 'textMuted' | 'accent' | 'good' | 'bad' | 'warn' | 'low' | 'needle'>;
 
 export function T({
   style,
   variant = 'body',
   tone = 'text',
   ...rest
-}: TextProps & { variant?: 'hero' | 'title' | 'heading' | 'body' | 'small' | 'caption' | 'mono'; tone?: Tone }) {
+}: TextProps & { variant?: 'hero' | 'title' | 'heading' | 'number' | 'body' | 'small' | 'caption' | 'mono'; tone?: Tone }) {
   const c = useTheme();
   return <Text style={[{ color: c[tone] }, styles[variant], style]} {...rest} />;
 }
 
-export function Screen({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
+export function Screen({ title, subtitle, children, right }: { title: string; subtitle?: string; children: ReactNode; right?: ReactNode }) {
   const c = useTheme();
   const insets = useSafeAreaInsets();
   return (
@@ -37,7 +37,16 @@ export function Screen({ title, children, right }: { title: string; children: Re
       contentContainerStyle={{ paddingTop: insets.top + Spacing.four, paddingBottom: insets.bottom + 120 }}>
       <View style={styles.content}>
         <View style={styles.titleRow}>
-          <T variant="title">{title}</T>
+          <View style={{ flexShrink: 1 }}>
+            <T variant="title" accessibilityRole="header">
+              {title}
+            </T>
+            {subtitle ? (
+              <T variant="small" tone="textSecondary">
+                {subtitle}
+              </T>
+            ) : null}
+          </View>
           {right}
         </View>
         {children}
@@ -51,13 +60,20 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
   return <View style={[styles.card, { backgroundColor: c.card }, style]}>{children}</View>;
 }
 
-export function Section({ title, children, right }: { title: string; children: ReactNode; right?: ReactNode }) {
+export function Section({ title, hint, children, right }: { title: string; hint?: string; children: ReactNode; right?: ReactNode }) {
   return (
-    <View style={{ gap: Spacing.two }}>
+    <View style={{ gap: Spacing.three }}>
       <View style={styles.titleRow}>
-        <T variant="small" tone="textSecondary" style={styles.sectionTitle}>
-          {title.toUpperCase()}
-        </T>
+        <View style={{ flexShrink: 1 }}>
+          <T variant="heading" accessibilityRole="header">
+            {title}
+          </T>
+          {hint ? (
+            <T variant="caption" tone="textSecondary">
+              {hint}
+            </T>
+          ) : null}
+        </View>
         {right}
       </View>
       {children}
@@ -117,9 +133,9 @@ export function Chips<K extends string | number>({
             accessibilityRole="button"
             accessibilityState={{ selected: on }}
             onPress={() => onChange(o.key)}
-            style={[styles.chip, { backgroundColor: on ? c.text : c.card, borderColor: c.separator }]}>
+            style={[styles.chip, { backgroundColor: on ? c.accent : 'transparent', borderColor: on ? c.accent : c.separator }]}>
             {o.color && <View style={[styles.dot, { backgroundColor: o.color }]} />}
-            <Text style={[styles.chipText, { color: on ? c.background : c.text }]}>{o.label}</Text>
+            <Text style={[styles.chipText, { color: on ? c.accentText : c.text }]}>{o.label}</Text>
           </Pressable>
         );
       })}
@@ -167,18 +183,18 @@ export function ProgressBar({ pct, color }: { pct: number; color: string }) {
 }
 
 const styles = StyleSheet.create({
-  hero: { fontSize: 64, lineHeight: 70, fontWeight: '700', fontFamily: Fonts.rounded, fontVariant: ['tabular-nums'] },
-  title: { fontSize: 32, lineHeight: 38, fontWeight: '700' },
-  heading: { fontSize: 20, lineHeight: 26, fontWeight: '600' },
+  hero: { fontSize: 88, lineHeight: 88, fontFamily: Display.semibold, fontVariant: ['tabular-nums'], letterSpacing: -1 },
+  title: { fontSize: 36, lineHeight: 40, fontFamily: Display.semibold },
+  heading: { fontSize: 24, lineHeight: 28, fontFamily: Display.semibold },
+  number: { fontSize: 22, lineHeight: 26, fontFamily: Display.medium, fontVariant: ['tabular-nums'] },
   body: { fontSize: 16, lineHeight: 22 },
   small: { fontSize: 14, lineHeight: 19 },
   caption: { fontSize: 12, lineHeight: 16 },
   mono: { fontSize: 12, lineHeight: 16, fontFamily: Fonts.mono },
-  content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.four, gap: Spacing.five },
+  content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: 20, gap: Spacing.six },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.two },
-  sectionTitle: { letterSpacing: 0.6, fontWeight: '600' },
-  card: { borderRadius: 14, padding: Spacing.four, gap: Spacing.three },
-  button: { borderRadius: 12, paddingVertical: 12, paddingHorizontal: 18, alignItems: 'center' },
+  card: { borderRadius: 12, padding: Spacing.four, gap: Spacing.three },
+  button: { borderRadius: 10, paddingVertical: 13, paddingHorizontal: 18, alignItems: 'center' },
   buttonPlain: { paddingVertical: 6, paddingHorizontal: 6 },
   buttonText: { fontSize: 16, fontWeight: '600' },
   chip: { flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, borderWidth: 1, paddingVertical: 6, paddingHorizontal: 12 },
@@ -186,5 +202,5 @@ const styles = StyleSheet.create({
   dot: { width: 8, height: 8, borderRadius: 4 },
   input: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  track: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  track: { height: 6, borderRadius: 3, overflow: 'hidden' },
 });

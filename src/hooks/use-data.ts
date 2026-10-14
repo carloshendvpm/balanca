@@ -1,8 +1,8 @@
 import { useEffect, useMemo } from 'react';
 
 import { metricsFor, type MetricValues } from '@/core/metrics';
-import { listGoals, listProfiles, listReadings } from '@/db/repo';
-import type { GoalRow, Profile, Reading } from '@/db/schema';
+import { listGoals, listMeasurements, listProfiles, listReadings } from '@/db/repo';
+import type { GoalRow, Measurement, Profile, Reading } from '@/db/schema';
 import { useQuery, useStore } from '@/db/store';
 
 export const useProfiles = () => useQuery(listProfiles, [], [] as Profile[]);
@@ -32,4 +32,9 @@ export function useProfileReadings(profile: Profile | null): ReadingWithMetrics[
 export function useGoals(profile: Profile | null) {
   const id = profile?.id ?? -1;
   return useQuery((db) => listGoals(db, id), [id], [] as GoalRow[]);
+}
+
+export function useMeasurements(profile: Profile | null) {
+  const id = profile?.id ?? -1;
+  return useQuery((db) => listMeasurements(db, id), [id], [] as Measurement[]);
 }

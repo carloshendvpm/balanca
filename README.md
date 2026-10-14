@@ -3,9 +3,12 @@
 App de iPhone para balanças de bioimpedância **OKOK** (Chipsea), feito para substituir o app oficial:
 
 - **Offline e privado.** Não tem conta nem nuvem; os dados ficam em SQLite no aparelho. Exporta CSV e faz backup em JSON.
-- **Histórico e gráficos.** Gráfico de cada métrica com média móvel de 7 dias, períodos de 1M a Tudo, comparação entre duas pesagens e variação em 7 e 30 dias.
+- **Peso de tendência.** Suavização de Holt (nível + ritmo) que ignora a oscilação diária de água sem ficar atrasada durante uma perda constante. A tela inicial mostra o peso numa régua de balança analógica, com as metas marcadas.
+- **Histórico e gráficos.** Gráfico de cada métrica com a linha de tendência, períodos de 1M a Tudo, comparação entre duas pesagens e variação em 7 e 30 dias.
+- **Gordura pela fita métrica.** Método da Marinha dos EUA (pescoço, cintura e quadril), além da relação cintura/altura. É útil para balanças que não enviam bioimpedância.
+- **Lembrete diário.** Notificação local no horário escolhido, que não aparece se você já se pesou no dia.
 - **Multiusuário.** Cada pesagem vai sozinha para o perfil com peso mais próximo; se houver dúvida, o app pergunta.
-- **Várias metas simultâneas.** Ex.: 80 kg até dezembro e 75 kg até junho. Cada meta mostra o progresso, o ritmo necessário, o ritmo atual (regressão dos últimos 28 dias) e a data prevista de chegada.
+- **Várias metas simultâneas.** Ex.: 80 kg até dezembro e 75 kg até junho. Cada meta mostra o progresso medido sobre o peso de tendência, o ritmo necessário, o ritmo atual (regressão dos últimos 28 dias) e a data prevista de chegada.
 
 O protocolo BLE e as fórmulas vêm da engenharia reversa em
 [100nandoo/okok-bia-formulas](https://github.com/100nandoo/okok-bia-formulas). Os testes verificam os resultados contra o `okok_ble_reader.py` original.
@@ -32,7 +35,7 @@ npm run web         # app no navegador, com balança simulada
 ## Instalar no iPhone sem Mac e sem conta paga
 
 1. Suba o repositório no GitHub. Em repositório **público**, os minutos de macOS são ilimitados.
-2. A cada push na `main`, o workflow **iOS (.ipa sem assinatura)** compila o app. Baixe o artefato `Balanca-ipa` em *Actions*.
+2. Em *Actions › iOS (.ipa sem assinatura) › Run workflow*, o GitHub compila o app em 8–20 min. Baixe o artefato `Balanca-ipa` da execução. Cada push roda só os testes.
 3. No Windows, instale o [Sideloadly](https://sideloadly.io) (precisa do iTunes e do iCloud baixados do site da Apple, não da Microsoft Store).
 4. Conecte o iPhone por cabo, arraste o `Balanca.ipa` para o Sideloadly e entre com seu Apple ID gratuito.
 5. No iPhone, ative *Ajustes › Privacidade e Segurança › Modo Desenvolvedor* e confie no seu Apple ID em *Ajustes › Geral › VPN e Gerenciamento de Dispositivos*.

@@ -1,14 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Pressable, Switch, View } from 'react-native';
 
 import { readingFromAdvertisement, startScale, type Advertisement } from '@/ble/scale-source';
 import { exportCsv, exportJson, importFile } from '@/data/backup';
+import { DEFAULT_REMINDER, remindersSupported, requestReminderPermission, syncReminders, type ReminderPrefs } from '@/data/reminders';
+import { getSetting, setSetting } from '@/db/repo';
+import { useQuery } from '@/db/store';
 import { pickText, shareText } from '@/data/file-io';
 import { formatBrDate } from '@/core/dates';
 import { useStore } from '@/db/store';
 import { useActiveProfile } from '@/hooks/use-data';
 import type { Profile } from '@/db/schema';
-import { Button, Card, Divider, Row, Section, Screen, T } from '@/ui/kit';
+import { Button, Card, Chips, Divider, Row, Section, Screen, T } from '@/ui/kit';
 import { ProfileEditor } from '@/ui/profile-editor';
 
 export default function Settings() {
@@ -43,7 +46,7 @@ export default function Settings() {
                     <T>{p.name}</T>
                   </Row>
                   <T variant="small" tone="textSecondary">
-                    {p.heightCm} cm · {formatBrDate(p.birthDate)} ›
+                    {p.heightCm} cm, {formatBrDate(p.birthDate)} ›
                   </T>
                 </Row>
               </Pressable>
@@ -54,6 +57,8 @@ export default function Settings() {
           Cada pesagem vai automaticamente para o perfil com o peso mais próximo. Se houver dúvida, o app pergunta.
         </T>
       </Section>
+
+      <ReminderSection />
 
       <Section title="Seus dados">
         <Card>
@@ -104,6 +109,62 @@ export default function Settings() {
   );
 }
 
+const HOURS = [5, 6, 7, 8, 9, 10];
+const MINUTES = [0, 15, 30, 45];
+
+function ReminderSection() {
+  const { db, invalidate } = useStore();
+  const prefs = useQuery((d) => getSetting(d, 'reminder', DEFAULT_REMINDER), [], DEFAULT_REMINDER);
+  const [denied, setDenied] = useState(false);
+
+  const update = async (patch: Partial<ReminderPrefs>) => {
+    const next = { ...prefs, ...patch };
+    if (patch.enabled && !(await requestReminderPermission())) {
+      setDenied(true);
+      return;
+    }
+    setDenied(false);
+    await setSetting(db, 'reminder', next);
+    await syncReminders(db);
+    invalidate();
+  };
+
+  return (
+    <Section title="Lembrete diário" hint="Pesar sempre no mesmo horário deixa a tendência mais precisa">
+      <Card>
+        {!remindersSupported ? (
+          <T tone="textSecondary">Disponível no app do iPhone.</T>
+        ) : (
+          <>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <T>{prefs.enabled ? `Todo dia às ${prefs.hour}h${String(prefs.minute).padStart(2, '0')}` : 'Desligado'}</T>
+              <Switch value={prefs.enabled} onValueChange={(v) => update({ enabled: v })} accessibilityLabel="Lembrete diário" />
+            </Row>
+            {prefs.enabled && (
+              <>
+                <Chips options={HOURS.map((h) => ({ key: h, label: `${h}h` }))} value={prefs.hour} onChange={(hour) => update({ hour })} />
+                <Chips
+                  options={MINUTES.map((m) => ({ key: m, label: `:${String(m).padStart(2, '0')}` }))}
+                  value={prefs.minute}
+                  onChange={(minute) => update({ minute })}
+                />
+                <T variant="caption" tone="textMuted">
+                  Se você já se pesou no dia, o lembrete daquele dia não aparece.
+                </T>
+              </>
+            )}
+            {denied && (
+              <T variant="small" tone="warn">
+                As notificações estão bloqueadas. Libere em Ajustes do iPhone › Notificações › Balança.
+              </T>
+            )}
+          </>
+        )}
+      </Card>
+    </Section>
+  );
+}
+
 /** Lists raw advertisements with manufacturer data, to identify the scale's variant. */
 function Diagnostics() {
   const [ads, setAds] = useState<Advertisement[]>([]);
@@ -126,14 +187,14 @@ function Diagnostics() {
   return (
     <View style={{ gap: 8 }}>
       <T variant="caption" tone="textSecondary">
-        Bluetooth: {state || '…'} · {ads.length} aparelhos. Suba na balança: ela aparece no topo (sinal mais forte).
+        Bluetooth {state || 'iniciando'}, {ads.length} aparelhos por perto. Suba na balança: ela aparece no topo, com o sinal mais forte.
       </T>
       {ads.slice(0, 15).map((ad) => {
         const r = readingFromAdvertisement(ad);
         return (
           <View key={ad.id} style={{ gap: 2 }}>
             <T variant="small" tone={r ? 'good' : 'text'}>
-              {ad.name || '(sem nome)'} · {ad.rssi} dBm{r ? ` · OKOK ${r.variant} ${r.weightKg} kg${r.stable ? ' estável' : ''}` : ''}
+              {ad.name || 'Sem nome'}, {ad.rssi} dBm{r ? `: OKOK ${r.variant}, ${r.weightKg} kg${r.stable ? ', estável' : ''}` : ''}
             </T>
             <T variant="mono" tone="textMuted" selectable>
               {ad.manufacturerData}

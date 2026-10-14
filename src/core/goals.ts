@@ -1,4 +1,5 @@
 import { DAY, slopePerDay, type Point } from './series';
+import { lastTrend } from './trend';
 
 export interface Goal {
   targetKg: number;
@@ -11,7 +12,8 @@ export type GoalStatus = 'achieved' | 'ahead' | 'on_track' | 'behind' | 'overdue
 
 export interface GoalProgress {
   status: GoalStatus;
-  currentKg: number;
+  currentKg: number; // smoothed estimate, so one heavy or light day does not flip the status
+  lastKg: number; // latest raw reading
   progressPct: number; // 0..100 of the way from startKg to targetKg
   remainingKg: number; // signed: negative means still need to lose
   daysLeft: number;
@@ -25,18 +27,30 @@ const TREND_WINDOW_DAYS = 28;
 const MIN_TREND_SPAN_DAYS = 7;
 const ON_TRACK_TOLERANCE_KG = 0.5;
 
-/** Weekly rate from the last 28 days of readings, if they span at least a week. */
-export function recentTrendPerWeek(weights: Point[], now: number): number | null {
+/** Readings of the last 28 days, if there are enough of them to fit a line. */
+function recentWindow(weights: Point[], now: number): Point[] | null {
   const recent = weights.filter((p) => p.t >= now - TREND_WINDOW_DAYS * DAY && p.t <= now);
   if (recent.length < 3 || recent[recent.length - 1].t - recent[0].t < MIN_TREND_SPAN_DAYS * DAY) return null;
-  const s = slopePerDay(recent);
-  return s === null ? null : s * 7;
+  return recent;
 }
 
-/** `weights` must be sorted by time; the latest one at or before `now` is the current weight. */
+/** Weekly rate from the last 28 days of readings, if they span at least a week. */
+export function recentTrendPerWeek(weights: Point[], now: number): number | null {
+  const recent = recentWindow(weights, now);
+  const s = recent && slopePerDay(recent);
+  return s == null ? null : s * 7;
+}
+
+/** Today's trend weight: the same number the home screen shows. */
+export function smoothedWeight(weights: Point[], now: number): number | null {
+  return lastTrend(weights.filter((p) => p.t <= now));
+}
+
+/** `weights` must be sorted by time; progress is measured on the trend weight up to `now`. */
 export function evaluateGoal(goal: Goal, weights: Point[], now: number): GoalProgress {
   const past = weights.filter((p) => p.t <= now);
-  const currentKg = past.length ? past[past.length - 1].v : goal.startKg;
+  const lastKg = past.length ? past[past.length - 1].v : goal.startKg;
+  const currentKg = smoothedWeight(past, now) ?? goal.startKg;
   const losing = goal.targetKg < goal.startKg;
   const sign = losing ? -1 : 1;
 
@@ -68,6 +82,7 @@ export function evaluateGoal(goal: Goal, weights: Point[], now: number): GoalPro
   return {
     status,
     currentKg,
+    lastKg,
     progressPct,
     remainingKg,
     daysLeft,

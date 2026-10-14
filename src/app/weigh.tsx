@@ -8,6 +8,7 @@ import { StableDetector } from '@/core/capture';
 import { parseDecimal } from '@/core/dates';
 import { formatMetric, metricsFor } from '@/core/metrics';
 import type { ScaleReading } from '@/core/protocol/parse';
+import { syncReminders } from '@/data/reminders';
 import { recordWeighing, settleGoals } from '@/db/actions';
 import { assignReading, setReadingImpedance } from '@/db/repo';
 import { useStore } from '@/db/store';
@@ -59,6 +60,7 @@ export default function Weigh() {
             const measuredAt = Date.now();
             const base = { measuredAt, weightKg: r.weightKg, impedance: r.impedance, variant: r.variant, rawHex: r.rawHex };
             const { id, match } = await recordWeighing(db, base);
+            syncReminders(db).catch(() => {});
             keep({
               id,
               profileId: match.kind === 'match' ? match.profileId : null,
@@ -91,6 +93,7 @@ export default function Weigh() {
     if (!kg || kg < 2 || kg > 300) return;
     const measuredAt = Date.now();
     const { id, match } = await recordWeighing(db, { measuredAt, weightKg: kg, impedance: null, variant: 'manual', rawHex: '' });
+    syncReminders(db).catch(() => {});
     keep({
       id,
       profileId: match.kind === 'match' ? match.profileId : null,
@@ -129,7 +132,11 @@ export default function Weigh() {
         </T>
         <T variant="caption" tone="textMuted">
           {live
-            ? `${live.variant} · ${live.impedance ? `${live.impedance.toFixed(1)} Ω` : live.stable ? 'só peso (sem bioimpedância)' : 'medindo…'}`
+            ? live.impedance
+              ? `Impedância ${live.impedance.toFixed(1).replace('.', ',')} Ω`
+              : live.stable
+                ? 'Peso registrado'
+                : 'Fique parado'
             : 'Fique descalço para medir a composição corporal'}
         </T>
       </Card>
@@ -150,11 +157,11 @@ export default function Weigh() {
                 </Row>
                 {m?.bodyFatPct != null ? (
                   <T tone="textSecondary">
-                    Gordura {formatMetric('bodyFatPct', m.bodyFatPct)} · Músculo {formatMetric('muscleKg', m.muscleKg)} · IMC{' '}
+                    Gordura {formatMetric('bodyFatPct', m.bodyFatPct)}, músculo {formatMetric('muscleKg', m.muscleKg)}, IMC{' '}
                     {formatMetric('bmi', m.bmi)}
                   </T>
                 ) : (
-                  <T tone="textSecondary">IMC {formatMetric('bmi', m?.bmi)} · sem bioimpedância</T>
+                  <T tone="textSecondary">IMC {formatMetric('bmi', m?.bmi)}</T>
                 )}
                 {profiles.length > 1 && (
                   <>
@@ -185,7 +192,7 @@ export default function Weigh() {
       )}
 
       {isSimulated && (
-        <Section title="Simulador">
+        <Section title="Simulador" hint="Aparece só no navegador, onde não há Bluetooth">
           <Card>
             <Field label="Peso simulado (kg)" value={simKg} onChangeText={setSimKg} keyboardType="decimal-pad" testID="sim-weight" />
             <Button
@@ -203,7 +210,7 @@ export default function Weigh() {
         </Section>
       )}
 
-      <Section title="Registrar manualmente">
+      <Section title="Sem a balança por perto?" hint="Digite o peso para registrar manualmente">
         <Card>
           <Field label="Peso (kg)" placeholder="80,5" value={manualKg} onChangeText={setManualKg} keyboardType="decimal-pad" />
           <Button label="Salvar peso" kind="secondary" onPress={addManual} disabled={!parseDecimal(manualKg)} />

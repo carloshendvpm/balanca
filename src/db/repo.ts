@@ -1,6 +1,6 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
-import type { GoalRow, Profile, Reading } from './schema';
+import type { GoalRow, Measurement, Profile, Reading } from './schema';
 
 export const listProfiles = (db: SQLiteDatabase) =>
   db.getAllAsync<Profile>('SELECT * FROM profiles ORDER BY id');
@@ -71,3 +71,26 @@ export const completeGoal = (db: SQLiteDatabase, id: number, at: number) =>
 export const deleteGoal = (db: SQLiteDatabase, id: number) => db.runAsync('DELETE FROM goals WHERE id=?', id);
 
 export const listAllGoals = (db: SQLiteDatabase) => db.getAllAsync<GoalRow>('SELECT * FROM goals ORDER BY id');
+
+export const listMeasurements = (db: SQLiteDatabase, profileId: number) =>
+  db.getAllAsync<Measurement>('SELECT * FROM measurements WHERE profileId=? ORDER BY measuredAt', profileId);
+
+export const listAllMeasurements = (db: SQLiteDatabase) =>
+  db.getAllAsync<Measurement>('SELECT * FROM measurements ORDER BY id');
+
+export async function insertMeasurement(db: SQLiteDatabase, m: Omit<Measurement, 'id'>) {
+  await db.runAsync(
+    'INSERT INTO measurements (profileId, measuredAt, neckCm, waistCm, hipCm) VALUES (?,?,?,?,?)',
+    m.profileId, m.measuredAt, m.neckCm, m.waistCm, m.hipCm,
+  );
+}
+
+export const deleteMeasurement = (db: SQLiteDatabase, id: number) => db.runAsync('DELETE FROM measurements WHERE id=?', id);
+
+export async function getSetting<T>(db: SQLiteDatabase, key: string, fallback: T): Promise<T> {
+  const row = await db.getFirstAsync<{ value: string }>('SELECT value FROM settings WHERE key=?', key);
+  return row ? (JSON.parse(row.value) as T) : fallback;
+}
+
+export const setSetting = (db: SQLiteDatabase, key: string, value: unknown) =>
+  db.runAsync('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value', key, JSON.stringify(value));

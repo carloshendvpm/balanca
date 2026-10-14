@@ -3,6 +3,7 @@ import { View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-
 import Svg, { Circle, G, Line, Path, Text as SvgText } from 'react-native-svg';
 
 import type { Point } from '@/core/series';
+import { Display } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { T } from './kit';
@@ -14,14 +15,14 @@ export interface GoalLine {
 
 interface Props {
   raw: Point[]; // individual readings, drawn as small dots
-  trend: Point[]; // 7-day average, drawn as the line
+  trend: Point[]; // smoothed trend, drawn as the line
   goals?: GoalLine[];
   format(v: number): string;
   height?: number;
   color?: string;
 }
 
-const PAD = { top: 16, right: 12, bottom: 24, left: 40 };
+const PAD = { top: 16, right: 4, bottom: 24, left: 34 };
 
 function niceTicks(lo: number, hi: number, count = 4) {
   const span = hi - lo || 1;
@@ -100,7 +101,7 @@ export function LineChart({ raw, trend, goals = [], format, height = 220, color 
             {niceTicks(geo.lo, geo.hi).map((v) => (
               <G key={v}>
                 <Line x1={PAD.left} x2={width - PAD.right} y1={geo.y(v)} y2={geo.y(v)} stroke={c.separator} strokeWidth={1} />
-                <SvgText x={PAD.left - 6} y={geo.y(v) + 4} fontSize={10} fill={c.textMuted} textAnchor="end">
+                <SvgText x={PAD.left - 6} y={geo.y(v) + 4} fontSize={12} fontFamily={Display.medium} fill={c.textMuted} textAnchor="end">
                   {Number(v.toFixed(1)).toLocaleString('pt-BR')}
                 </SvgText>
               </G>
@@ -110,7 +111,7 @@ export function LineChart({ raw, trend, goals = [], format, height = 220, color 
                 key={i}
                 x={geo.x(t)}
                 y={height - 6}
-                fontSize={10}
+                fontSize={12} fontFamily={Display.medium}
                 fill={c.textMuted}
                 textAnchor={i === 0 ? 'start' : i === 2 ? 'end' : 'middle'}>
                 {fmtDate(t, !!spansYears)}
@@ -127,7 +128,7 @@ export function LineChart({ raw, trend, goals = [], format, height = 220, color 
                   strokeWidth={1}
                   strokeDasharray="4 4"
                 />
-                <SvgText x={width - PAD.right} y={geo.y(g.value) - 4} fontSize={10} fill={c.textSecondary} textAnchor="end">
+                <SvgText x={width - PAD.right} y={geo.y(g.value) - 4} fontSize={12} fontFamily={Display.medium} fill={c.textSecondary} textAnchor="end">
                   {g.label}
                 </SvgText>
               </G>
@@ -148,13 +149,13 @@ export function LineChart({ raw, trend, goals = [], format, height = 220, color 
       <View style={{ minHeight: 20, flexDirection: 'row', justifyContent: 'space-between' }}>
         {h ? (
           <T variant="caption" tone="textSecondary">
-            {new Date(h.t).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })} ·{' '}
-            <T variant="caption">{format(h.v)}</T>
-            {hTrend ? ` · média 7d ${format(hTrend.v)}` : ''}
+            {new Date(h.t).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' })}:{' '}
+            <T variant="caption" style={{ fontWeight: '600' }}>{format(h.v)}</T>
+            {hTrend ? `, tendência ${format(hTrend.v)}` : ''}
           </T>
         ) : (
           <T variant="caption" tone="textMuted">
-            ● pesagens   ━ média de 7 dias{goals.length ? '   ┅ metas' : ''}
+            ● pesagens    ━ tendência{goals.length ? '    ┅ metas' : ''}
           </T>
         )}
       </View>

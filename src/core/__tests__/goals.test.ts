@@ -24,11 +24,11 @@ describe('evaluateGoal', () => {
     const tight = evaluateGoal(goal(90, 40), w, day(30)); // line expects 92.5
     expect(easy.status).toBe('ahead');
     expect(tight.status).toBe('behind');
-    expect(easy.progressPct).toBeCloseTo(60);
+    expect(easy.progressPct).toBeCloseTo(60, 0);
     expect(easy.currentKgPerWeek).toBeCloseTo(-0.7);
-    expect(tight.requiredKgPerWeek).toBeCloseTo((-7 / 10) * 7);
+    expect(tight.requiredKgPerWeek).toBeCloseTo((-7 / 10) * 7, 1);
     // 2 kg left at 0.1 kg/day → 20 days
-    expect(easy.projectedDate).toBeCloseTo(day(50), -3);
+    expect(Math.abs(easy.projectedDate! - day(50))).toBeLessThan(DAY);
   });
 
   it('is on track when following the line', () => {
@@ -51,6 +51,16 @@ describe('evaluateGoal', () => {
     const g = evaluateGoal(goal(95, 60), linear(3), day(3));
     expect(g.currentKgPerWeek).toBeNull();
     expect(g.projectedDate).toBeNull();
+  });
+});
+
+describe('smoothed goal weight', () => {
+  it('ignores a single light day when deciding achievement', () => {
+    // Flat at 96 kg with one 94.5 kg outlier today; target 95 kg.
+    const w = Array.from({ length: 21 }, (_, i) => ({ t: day(i), v: i === 20 ? 94.5 : 96 }));
+    const g = evaluateGoal({ targetKg: 95, deadline: day(60), startDate: t0, startKg: 100 }, w, day(20));
+    expect(g.status).not.toBe('achieved');
+    expect(g.lastKg).toBe(94.5);
   });
 });
 

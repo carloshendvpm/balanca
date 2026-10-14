@@ -2,8 +2,8 @@ import type { SQLiteDatabase } from 'expo-sqlite';
 
 import { importReadingsCsv, toCsv } from '@/core/csv';
 import { METRICS, metricsFor } from '@/core/metrics';
-import { insertReading, listAllGoals, listAllReadings, listProfiles } from '@/db/repo';
-import type { GoalRow, Profile, Reading } from '@/db/schema';
+import { insertReading, listAllGoals, listAllMeasurements, listAllReadings, listProfiles } from '@/db/repo';
+import type { GoalRow, Measurement, Profile, Reading } from '@/db/schema';
 
 export async function exportCsv(db: SQLiteDatabase): Promise<string> {
   const profiles = await listProfiles(db);
@@ -32,21 +32,23 @@ export async function exportCsv(db: SQLiteDatabase): Promise<string> {
 
 interface Backup {
   app: 'balanca';
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
   profiles: Profile[];
   readings: Reading[];
   goals: GoalRow[];
+  measurements?: Measurement[]; // added in backup version 2
 }
 
 export async function exportJson(db: SQLiteDatabase): Promise<string> {
   const backup: Backup = {
     app: 'balanca',
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     profiles: await listProfiles(db),
     readings: await listAllReadings(db),
     goals: await listAllGoals(db),
+    measurements: await listAllMeasurements(db),
   };
   return JSON.stringify(backup, null, 1);
 }
@@ -54,7 +56,7 @@ export async function exportJson(db: SQLiteDatabase): Promise<string> {
 /** Restores a JSON backup, replacing everything. */
 async function restoreJson(db: SQLiteDatabase, b: Backup) {
   await db.withTransactionAsync(async () => {
-    await db.execAsync('DELETE FROM goals; DELETE FROM readings; DELETE FROM profiles;');
+    await db.execAsync('DELETE FROM measurements; DELETE FROM goals; DELETE FROM readings; DELETE FROM profiles;');
     for (const p of b.profiles)
       await db.runAsync('INSERT INTO profiles (id,name,sex,birthDate,heightCm,color) VALUES (?,?,?,?,?,?)', p.id, p.name, p.sex, p.birthDate, p.heightCm, p.color);
     for (const r of b.readings)
@@ -66,6 +68,11 @@ async function restoreJson(db: SQLiteDatabase, b: Backup) {
       await db.runAsync(
         'INSERT INTO goals (id,profileId,targetKg,deadline,startDate,startKg,completedAt) VALUES (?,?,?,?,?,?,?)',
         g.id, g.profileId, g.targetKg, g.deadline, g.startDate, g.startKg, g.completedAt,
+      );
+    for (const m of b.measurements ?? [])
+      await db.runAsync(
+        'INSERT INTO measurements (id,profileId,measuredAt,neckCm,waistCm,hipCm) VALUES (?,?,?,?,?,?)',
+        m.id, m.profileId, m.measuredAt, m.neckCm, m.waistCm, m.hipCm,
       );
   });
   return `Backup restaurado: ${b.profiles.length} perfis, ${b.readings.length} pesagens, ${b.goals.length} metas.`;

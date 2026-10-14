@@ -3,16 +3,25 @@ import { Pressable, View } from 'react-native';
 
 import { dateTime } from '@/core/dates';
 import { formatMetric, METRICS, metricDef, type MetricKey } from '@/core/metrics';
-import { DAY, movingAverage } from '@/core/series';
+import { navyBodyFat } from '@/core/navy';
+import { DAY } from '@/core/series';
+import { trendSeries } from '@/core/trend';
 import { listUnassigned } from '@/db/repo';
 import type { Reading } from '@/db/schema';
 import { useQuery } from '@/db/store';
-import { useActiveProfile, useGoals, useProfileReadings, type ReadingWithMetrics } from '@/hooks/use-data';
+import { useActiveProfile, useGoals, useMeasurements, useProfileReadings, type ReadingWithMetrics } from '@/hooks/use-data';
 import { useTheme } from '@/hooks/use-theme';
 import { Button, Card, Chips, Divider, Row, Section, Screen, T } from '@/ui/kit';
 import { LineChart } from '@/ui/line-chart';
 import { ProfileSwitcher } from '@/ui/profile-switcher';
 import { ReadingSheet } from '@/ui/reading-sheet';
+
+type ChartKey = MetricKey | 'waistCm' | 'navyBf';
+
+const TAPE_METRICS: { key: ChartKey; label: string; format(v: number): string }[] = [
+  { key: 'navyBf', label: 'Gordura (fita)', format: (v) => `${v.toFixed(1).replace('.', ',')}%` },
+  { key: 'waistCm', label: 'Cintura', format: (v) => `${v.toFixed(1).replace('.', ',')} cm` },
+];
 
 const PERIODS = [
   { key: 30, label: '1M' },
@@ -28,21 +37,32 @@ export default function History() {
   const readings = useProfileReadings(active);
   const goals = useGoals(active);
   const unassigned = useQuery(listUnassigned, [], [] as Reading[]);
-  const [metric, setMetric] = useState<MetricKey>('weightKg');
+  const measurements = useMeasurements(active);
+  const [metric, setMetric] = useState<ChartKey>('weightKg');
   const [days, setDays] = useState(90);
   const [open, setOpen] = useState<Reading | null>(null);
   const [compare, setCompare] = useState<number[]>([]);
 
-  const available = METRICS.filter((d) => readings.some((r) => r.m[d.key] != null));
+  const options = [
+    ...METRICS.filter((d) => readings.some((r) => r.m[d.key] != null)).map((d) => ({ key: d.key as ChartKey, label: d.label })),
+    ...(measurements.length ? TAPE_METRICS.map((m) => ({ key: m.key, label: m.label })) : []),
+  ];
+  const tape = TAPE_METRICS.find((m) => m.key === metric);
+  const format = (v: number) => (tape ? tape.format(v) : formatMetric(metric as MetricKey, v));
   const now = Date.now();
-  const series = useMemo(
-    () =>
-      readings
-        .filter((r) => r.m[metric] != null && (days === 0 || r.measuredAt >= now - days * DAY))
-        .map((r) => ({ t: r.measuredAt, v: r.m[metric]! })),
+  const series = useMemo(() => {
+    const all =
+      metric === 'waistCm'
+        ? measurements.map((m) => ({ t: m.measuredAt, v: m.waistCm }))
+        : metric === 'navyBf'
+          ? measurements.flatMap((m) => {
+              const v = active && navyBodyFat(active.sex, active.heightCm, m);
+              return v == null ? [] : [{ t: m.measuredAt, v }];
+            })
+          : readings.filter((r) => r.m[metric] != null).map((r) => ({ t: r.measuredAt, v: r.m[metric]! }));
+    return all.filter((p) => days === 0 || p.t >= now - days * DAY);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [readings, metric, days],
-  );
+  }, [readings, measurements, metric, days, active]);
   const pair = compare.map((id) => readings.find((r) => r.id === id)).filter(Boolean) as ReadingWithMetrics[];
   pair.sort((a, b) => a.measuredAt - b.measuredAt);
 
@@ -70,15 +90,15 @@ export default function History() {
 
       {active && readings.length > 0 && (
         <>
-          <Chips options={available.map((d) => ({ key: d.key, label: d.label }))} value={metric} onChange={setMetric} />
-          <Card>
-            <Row style={{ justifyContent: 'space-between' }}>
-              <T variant="heading">{metricDef(metric).label}</T>
+          <Chips options={options} value={metric} onChange={setMetric} />
+          <View style={{ gap: 12 }}>
+            <Row style={{ justifyContent: 'space-between', alignItems: 'flex-end' }}>
+              <T variant="heading">{tape ? tape.label : metricDef(metric as MetricKey).label}</T>
               {series.length > 1 && (
                 <T tone="textSecondary">
                   {(() => {
                     const d = series[series.length - 1].v - series[0].v;
-                    return `${d > 0 ? '+' : ''}${formatMetric(metric, d)} no período`;
+                    return `${d > 0 ? '+' : ''}${format(d)} no período`;
                   })()}
                 </T>
               )}
@@ -86,15 +106,15 @@ export default function History() {
             <Chips options={PERIODS} value={days} onChange={setDays} />
             <LineChart
               raw={series}
-              trend={movingAverage(series)}
+              trend={tape ? series : trendSeries(series)}
               goals={
                 metric === 'weightKg'
                   ? goals.filter((g) => g.completedAt === null).map((g) => ({ value: g.targetKg, label: `Meta ${g.targetKg.toString().replace('.', ',')} kg` }))
                   : []
               }
-              format={(v) => formatMetric(metric, v)}
+              format={format}
             />
-          </Card>
+          </View>
 
           {pair.length === 2 && (
             <Section title="Comparação" right={<Button label="Limpar" kind="plain" onPress={() => setCompare([])} />}>

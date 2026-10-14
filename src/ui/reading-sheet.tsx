@@ -55,8 +55,7 @@ export function ReadingSheet({ reading, profiles, onClose }: { reading: Reading 
             onChange={reassign}
           />
           <T variant="mono" tone="textMuted">
-            {reading.variant}
-            {reading.rawHex ? ` · ${reading.rawHex}` : ''}
+            {reading.variant === 'manual' ? 'Registrada manualmente' : `Variante ${reading.variant}${reading.rawHex ? `, dados ${reading.rawHex}` : ''}`}
           </T>
           <Button label="Apagar pesagem" kind="danger" onPress={remove} />
         </>
