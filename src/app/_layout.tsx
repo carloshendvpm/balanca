@@ -1,4 +1,4 @@
-import { BarlowCondensed_500Medium, BarlowCondensed_600SemiBold, useFonts } from '@expo-google-fonts/barlow-condensed';
+import { useFonts } from 'expo-font';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -23,7 +23,11 @@ function Boot() {
 
 export default function RootLayout() {
   const scheme = useColorScheme() === 'dark' ? 'dark' : 'light';
-  const [fontsLoaded, fontError] = useFonts({ BarlowCondensed_500Medium, BarlowCondensed_600SemiBold });
+  // Only the two weights in use, so the other sixteen are not bundled.
+  const [fontsLoaded, fontError] = useFonts({
+    BarlowCondensed_500Medium: require('@expo-google-fonts/barlow-condensed/500Medium/BarlowCondensed_500Medium.ttf'),
+    BarlowCondensed_600SemiBold: require('@expo-google-fonts/barlow-condensed/600SemiBold/BarlowCondensed_600SemiBold.ttf'),
+  });
   const ready = fontsLoaded || !!fontError;
 
   useEffect(() => {
